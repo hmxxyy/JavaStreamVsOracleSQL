@@ -119,6 +119,7 @@ public class StreamFeatures {
         SELECT min(SAL), max(SAL), trunc(avg(SAL), 3), sum(SAL) FROM EMP;
         800	5000	2073.214	29025
          */
+
         DoubleSummaryStatistics result = Arrays.stream(EMPLOYEES)
             .map(r -> r.salary)
             .collect(Collectors.summarizingDouble(r -> r));
@@ -128,10 +129,11 @@ public class StreamFeatures {
         /* SQL 5: Lowest, highest, average, and total salary by department
         SELECT deptno, min(SAL), max(SAL), trunc(avg(SAL), 3), sum(SAL) FROM EMP
         GROUP BY deptno;
+        10	1300	5000	2916.666	8750
+        20	800	3000	2175	10875
         30	950	2850	1566.666	9400
-2       0	800	3000	2175	10875
-1       0	1300	5000	2916.666	8750
          */
+
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.groupingBy(r -> r.deptNo))
             .entrySet()
@@ -141,20 +143,16 @@ public class StreamFeatures {
                     .stream()
                     .map(e -> e.salary)
                     .collect(Collectors.summarizingDouble(s -> s))))
-            .entrySet()
-            .stream()
-            .sorted(Map.Entry.comparingByKey())
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                (newValue, oldValue)-> newValue, LinkedHashMap::new)).
-            forEach((k,v) ->
+            .forEach((k,v) ->
                 System.out.printf("DeptId: %d, Min: %8.3f, Max: %8.3f, Avg: %8.3f, Sum: %8.3f\n",
                     k, v.getMin(), v.getMax(), v.getAverage(), v.getSum()));
 
         /* SQL 6: Find employees with highest pay (salary + commission)
-        SELECT MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SAL + NVL(COMM, 0))
+        SELECT MAX(empno) KEEP (DENSE_RANK LAST ORDER BY SAL + NVL(COMM, 0))
         FROM emp
-        7369
+        7839
          */
+
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.
                 maxBy(Comparator.comparingDouble(r -> r.salary + (r.commission == null? 0.0 : r.commission))))
@@ -162,13 +160,14 @@ public class StreamFeatures {
             .ifPresent(r -> System.out.println("empNo with highest pay: " + r));
 
         /* SQL 7: Find employees with highest pay (salary + commission) by department
-        SELECT deptno, MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SAL + NVL(COMM, 0))
+        SELECT deptno, MAX(empno) KEEP (DENSE_RANK LAST ORDER BY SAL + NVL(COMM, 0))
         FROM emp
         GROUP BY deptno;
-        10	7934
-        20	7369
-        30	7900
+        10	7839
+        20	7788
+        30	7698
          */
+
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.groupingBy(r -> r.deptNo,
                 Collectors.maxBy(Comparator.comparingDouble(r -> r.salary + (r.commission == null ? 0.0 : r.commission)))))
