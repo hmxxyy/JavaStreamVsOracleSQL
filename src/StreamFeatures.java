@@ -1,4 +1,3 @@
-import javafx.util.Pair;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -79,21 +78,36 @@ public class StreamFeatures {
     };
 
     public static void main(String[] args) {
-        //SELECT DISTINCT JOB FROM EMPLOYEE
+        /* SQL 1: Get distinct jobs
+        SELECT distinct job from emp;
+        CLERK
+        SALESMAN
+        PRESIDENT
+        MANAGER
+        ANALYST
+         */
         Arrays.stream(EMPLOYEES)
             .map(r -> r.job)
             .distinct()
             .forEach(r -> System.out.println(r));
 
-        //Employees without commission
-        //SELECT empno FROM EMPLOYEE WHERE commission is null
+
+        /* SQL 2: All employess with commissions
+        SELECT empno FROM emp WHERE comm IS NOT NULL
+        7499
+        7521
+        7654
+        7844
+        */
         Arrays.stream(EMPLOYEES)
             .filter(r -> r.commission != null)
             .map(r -> r.empNo)
             .forEach(r -> System.out.println(r.toString()));
 
-        //count distinct jobs
-        //SELECT count(DISTINCT JOB) FROM EMPLOYEE;
+        /* SQL 3: Get distinct job count
+         SELECT COUNT(distinct job) FROM emp;
+         5
+         */
         System.out.println("Number of distinct jobs: " +
             Arrays.stream(EMPLOYEES)
                 .map(r -> r.job)
@@ -101,15 +115,23 @@ public class StreamFeatures {
                 .count()
         );
 
-        //lowest, highest, average, and total salary
-        //SELECT min(SALARY), max(SALARY), avg(SALARY), sum(SALARY) FROM EMPLOYEE;
+        /* SQL 4: Get lowest, highest, average, and total salary
+        SELECT min(SAL), max(SAL), trunc(avg(SAL), 3), sum(SAL) FROM EMP;
+        800	5000	2073.214	29025
+         */
         DoubleSummaryStatistics result = Arrays.stream(EMPLOYEES)
             .map(r -> r.salary)
             .collect(Collectors.summarizingDouble(r -> r));
         System.out.printf("Min: %8.3f, Max: %8.3f, Avg: %8.3f, Sum: %8.3f\n",
             result.getMin(), result.getMax(), result.getAverage(), result.getSum());
 
-        //lowest, highest, average, and total salary by department
+        /* SQL 5: Lowest, highest, average, and total salary by department
+        SELECT deptno, min(SAL), max(SAL), trunc(avg(SAL), 3), sum(SAL) FROM EMP
+        GROUP BY deptno;
+        30	950	2850	1566.666	9400
+2       0	800	3000	2175	10875
+1       0	1300	5000	2916.666	8750
+         */
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.groupingBy(r -> r.deptNo))
             .entrySet()
@@ -128,19 +150,25 @@ public class StreamFeatures {
                 System.out.printf("DeptId: %d, Min: %8.3f, Max: %8.3f, Avg: %8.3f, Sum: %8.3f\n",
                     k, v.getMin(), v.getMax(), v.getAverage(), v.getSum()));
 
-        //Find employees with highest pay (salary + commission)
-        //SELECT MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SALARY + NVL(COMMISSION, 0)
-        //FROM Employee
+        /* SQL 6: Find employees with highest pay (salary + commission)
+        SELECT MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SAL + NVL(COMM, 0))
+        FROM emp
+        7369
+         */
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.
                 maxBy(Comparator.comparingDouble(r -> r.salary + (r.commission == null? 0.0 : r.commission))))
             .map(r -> r.empNo)
             .ifPresent(r -> System.out.println("empNo with highest pay: " + r));
 
-        //Find employee with highest pay (salary + commission) in each department
-        //SELECT deptno, MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SALARY + NVL(COMMISSION, 0) OVER (PARTITION BY deptno)
-        //FROM Employee
-        //GROUP BY deptno
+        /* SQL 7: Find employees with highest pay (salary + commission) by department
+        SELECT deptno, MAX(empno) KEEP (DENSE_RANK FIRST ORDER BY SAL + NVL(COMM, 0))
+        FROM emp
+        GROUP BY deptno;
+        10	7934
+        20	7369
+        30	7900
+         */
         Arrays.stream(EMPLOYEES)
             .collect(Collectors.groupingBy(r -> r.deptNo,
                 Collectors.maxBy(Comparator.comparingDouble(r -> r.salary + (r.commission == null ? 0.0 : r.commission)))))
@@ -150,7 +178,16 @@ public class StreamFeatures {
             .map(r -> r.get())
             .forEach(r -> System.out.format("Employee with highest payment in Dept %d: %d\n", r.deptNo, r.empNo));
 
-        //SELECT e.empname, d.location from employee e, department d where e.deptno = d.deptno
+        /* SQL 8: Simple Join - List all employee with their department location
+        SELECT e.ename, d.loc
+        FROM emp e, dept d
+        WHERE e.deptno = d.deptno
+        KING	NEW YORK
+        BLAKE	CHICAGO
+        CLARK	NEW YORK
+        JONES	DALLAS
+        ...
+         */
         Arrays.stream(EMPLOYEES).forEach(
             r -> System.out.format("Employee %s's location is: %s\n", r.empName,
                 Arrays.stream(DEPARTMENTS).filter(d -> d.deptNo.equals(r.deptNo))
