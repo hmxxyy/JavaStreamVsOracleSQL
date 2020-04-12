@@ -159,10 +159,11 @@ public class StreamFeatures {
             .map(r -> r.empNo)
             .ifPresent(r -> System.out.println("empNo with highest pay: " + r));
 
-        /* SQL 7: Find employees with highest pay (salary + commission) by department
+        /* SQL 7: Find employees with highest pay (salary + commission) by department order by deptno
         SELECT deptno, MAX(empno) KEEP (DENSE_RANK LAST ORDER BY SAL + NVL(COMM, 0))
         FROM emp
-        GROUP BY deptno;
+        GROUP BY deptno
+        ORDER BY deptno;
         10	7839
         20	7788
         30	7698
@@ -175,6 +176,7 @@ public class StreamFeatures {
             .stream()
             .filter(Optional::isPresent)
             .map(r -> r.get())
+            .sorted(Comparator.comparingInt(r -> r.deptNo))
             .forEach(r -> System.out.format("Employee with highest payment in Dept %d: %d\n", r.deptNo, r.empNo));
 
         /* SQL 8: Simple Join - List all employee with their department location
@@ -187,6 +189,7 @@ public class StreamFeatures {
         JONES	DALLAS
         ...
          */
+
         Arrays.stream(EMPLOYEES).forEach(
             r -> System.out.format("Employee %s's location is: %s\n", r.empName,
                 Arrays.stream(DEPARTMENTS).filter(d -> d.deptNo.equals(r.deptNo))
